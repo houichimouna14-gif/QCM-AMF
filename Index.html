@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AMF Pro - Quiz Certification</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:#0a0e27;color:#fff;min-height:100vh;padding:1rem}
+.container{max-width:800px;margin:0 auto;padding-top:2rem}
+h1{font-size:2rem;text-align:center;margin-bottom:1rem;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stats{display:flex;justify-content:center;gap:2rem;margin:2rem 0;text-align:center}
+.stat-number{font-size:2rem;font-weight:800;color:#667eea}
+.card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:1.5rem;margin:1rem 0}
+.card.popular{border:2px solid #667eea;background:rgba(102,126,234,0.1)}
+.price{font-size:2.5rem;font-weight:800;color:#667eea}
+.btn{width:100%;padding:0.75rem;border:none;border-radius:8px;font-weight:700;cursor:pointer;margin-top:1rem}
+.btn-primary{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+.btn-secondary{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2)}
+.question-box{background:rgba(255,255,255,0.05);border-radius:16px;padding:1.5rem;margin:1rem 0}
+.option{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:1rem;margin:0.5rem 0;cursor:pointer}
+.option:hover{border-color:#667eea}
+.option.correct{border-color:#48bb78;background:rgba(72,187,120,0.2)}
+.option.wrong{border-color:#fc8181;background:rgba(252,129,129,0.2)}
+.progress{height:8px;background:rgba(255,255,255,0.1);border-radius:4px;margin:1rem 0}
+.progress-fill{height:100%;background:linear-gradient(90deg,#667eea,#764ba2);border-radius:4px;transition:width 0.3s}
+.timer{color:#f6ad55;font-weight:700;text-align:right}
+.score-circle{width:150px;height:150px;border-radius:50%;background:conic-gradient(#667eea var(--deg),rgba(255,255,255,0.1) 0);display:flex;align-items:center;justify-content:center;margin:1rem auto;position:relative}
+.score-circle::before{content:'';position:absolute;width:120px;height:120px;border-radius:50%;background:#0a0e27}
+.score-text{position:relative;z-index:1;font-size:2rem;font-weight:800;color:#667eea}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="container" id="landing">
+<h1>AMF Pro - Quiz Certification</h1>
+<p style="text-align:center;color:#a0aec0;margin-bottom:2rem">50+ questions pour reussir l'examen AMF</p>
+<div class="stats">
+<div><div class="stat-number">50+</div><div style="color:#718096;font-size:0.8rem">Questions</div></div>
+<div><div class="stat-number">80%</div><div style="color:#718096;font-size:0.8rem">Seuil</div></div>
+<div><div class="stat-number">10€</div><div style="color:#718096;font-size:0.8rem">Pro</div></div>
+</div>
+<div class="card">
+<h3>Gratuit</h3>
+<div class="price">0€</div>
+<p style="color:#a0aec0;font-size:0.9rem">20 questions<br>Mode entrainement</p>
+<button class="btn btn-secondary" onclick="startQuiz('free')">Commencer</button>
+</div>
+<div class="card popular">
+<h3>Pro ⭐</h3>
+<div class="price">10€</div>
+<p style="color:#a0aec0;font-size:0.9rem">50+ questions<br>Explications<br>Mode examen 2h</p>
+<button class="btn btn-primary" onclick="startQuiz('pro')">S'abonner</button>
+</div>
+</div>
+
+<div class="container hidden" id="quiz">
+<div class="timer" id="timer">--:--</div>
+<div class="progress"><div class="progress-fill" id="progress" style="width:0%"></div></div>
+<div class="question-box">
+<div id="qnum">Question 1/20</div>
+<h2 id="qtext" style="margin:1rem 0">Chargement...</h2>
+<div id="options"></div>
+<div id="explanation" style="display:none;margin-top:1rem;padding:1rem;background:rgba(102,126,234,0.1);border-radius:8px">
+<strong style="color:#667eea">Explication</strong>
+<p id="explainText" style="color:#a0aec0;margin-top:0.5rem"></p>
+</div>
+</div>
+<div style="display:flex;gap:1rem">
+<button class="btn btn-secondary" onclick="prevQ()" id="prevBtn">Précédent</button>
+<button class="btn btn-primary" onclick="nextQ()" id="nextBtn">Suivant</button>
+<button class="btn btn-primary hidden" onclick="finish()" id="finishBtn">Terminer</button>
+</div>
+</div>
+
+<div class="container hidden" id="results">
+<h1>Resultats</h1>
+<div class="score-circle" id="scoreCircle"><div class="score-text" id="scoreText">0%</div></div>
+<div id="resultDetails" style="text-align:center;margin:1rem 0"></div>
+<div id="review"></div>
+<button class="btn btn-primary" onclick="location.reload()" style="margin-top:1rem">Recommencer</button>
+</div>
+
+<script>
+const allQuestions=[
+{q:"Role principal de l'AMF ?",a:["Reguler banques","Proteger epargnants et informer","Fixer taux"],c:1,exp:"L'AMF protege les epargnants et assure le bon fonctionnement des marches."},
+{q:"Duree conservation donnees clients ?",a:["3 ans","5 ans","10 ans"],c:1,exp:"Conservation pendant 5 ans apres la fin de la relation."},
+{q:"Front running ?",a:["Analyse technique","Execution sur info privilegiee","Couverture"],c:1,exp:"Passer un ordre en utilisant une info sur un ordre client imminent."},
+{q:"Classification clients MIFID II ?",a:["Particuliers/pros","Detail, pros, contreparties","Institutionnels"],c:1,exp:"Trois categories : detail, professionnels, contreparties eligibles."},
+{q:"Conflit nuisible quand ?",a:["Perte financiere","Risque d'nuire au client","Intentionnel"],c:1,exp:"Nuisible des lors qu'il risque d'nuire aux interets du client."},
+{q:"Devoir de conseil = ?",a:["Produit plus rentable","Produit adapte au client","Produit sans risque"],c:1,exp:"Recommander le produit le plus adapte aux besoins du client."},
+{q:"Qu'est-ce que le PER ?",a:["Prix/rendement","Cours/benefice","Volatilite"],c:1,exp:"Price Earning Ratio = Cours / Benefice net par action."},
+{q:"Sensibilite obligation ?",a:["Capacite remboursement","Variation prix pour 1% taux","Risque defaut"],c:1,exp:"Variation en % du prix pour 100 points de base de taux."},
+{q:"Ratio de Sharpe ?",a:["Rendement total","Rendement excedentaire/risque","Frais gestion"],c:1,exp:"(Rendement - Rendement sans risque) / Volatilite."},
+{q:"Double materialite ?",a:["Analyse financiere","Impact env. + ESG sur entreprise","Bilan"],c:1,exp:"Impact entreprise sur env. ET impact ESG sur performance."},
+{q:"Volatilite implicite ?",a:["Historique 1 an","Anticipee par marche","Ecart-type passe"],c:1,exp:"Volatilite future anticipee, extraite du prix des options."},
+{q:"Risque de contrepartie ?",a:["Variation taux","Defaut de la contrepartie","Liquidite"],c:1,exp:"Risque de perte si la contrepartie ne remplit pas ses obligations."},
+{q:"Label ISR ?",a:["Greenfin","Investissement Socialement Responsable","ESG 1000"],c:1,exp:"Label ISR certifie les fonds respectant criteres ESG stricts."},
+{q:"Duration obligation ?",a:["Date echeance","Duree vie moyenne ponderee","Rendement"],c:1,exp:"Duree de vie moyenne ponderee des flux actualises."},
+{q:"Beta d'un titre ?",a:["Rendement attendu","Sensibilite aux variations marche","Volatilite propre"],c:1,exp:"Beta mesure la sensibilite aux variations du marche."},
+{q:"PFU = ?",a:["Impot societes","Prelevement 30%","Taxe transactions"],c:1,exp:"Prelevement Forfaitaire Unique = 30% sur revenus du capital."},
+{q:"Taux d'usure ?",a:["Taux Livret A","TEG maximal usuraire","Taux BCE"],c:1,exp:"TEG maximal au-dela duquel un pret est usuraire."},
+{q:"LCB-FT signifie ?",a:["Lutte Banque/Finance","Blanchiment/Financement Terrorisme","Loi Credit"],c:1,exp:"Lutte contre le Blanchiment de Capitaux et le Financement du Terrorisme."},
+{q:"Courtier en assurance = ?",a:["Employe compagnie","Intermediaire independent","Expert-comptable"],c:1,exp:"Intermediaire independent qui cherche la meilleure offre."},
+{q:"Livret A = ?",a:["Compte actions","Epargne reglementee exoneree","Credit immobilier"],c:1,exp:"Epargne reglementee, exoneree d'impot, plafonnee a 22 950€."}
+];
+
+let current=0;
+let answers=[];
+let mode='free';
+let timer=null;
+let timeLeft=0;
+let quizQuestions=[];
+
+function startQuiz(m){
+mode=m;
+if(mode==='free'){
+quizQuestions=allQuestions.slice(0,10);
+document.getElementById('timer').style.display='none';
+}else{
+quizQuestions=allQuestions.slice();
+timeLeft=600;
+startTimer();
+}
+current=0;
+answers=new Array(quizQuestions.length).fill(null);
+document.getElementById('landing').classList.add('hidden');
+document.getElementById('quiz').classList.remove('hidden');
+showQ();
+}
+
+function startTimer(){
+if(timer) clearInterval(timer);
+timer=setInterval(function(){
+timeLeft--;
+var m=Math.floor(timeLeft/60);
+var s=timeLeft%60;
+document.getElementById('timer').textContent=m+':'+(s<<10?'0':'')+s;
+if(timeLeft<=0){clearInterval(timer);finish();}
+},1000);
+}
+
+function showQ(){
+var q=quizQuestions[current];
+document.getElementById('qnum').textContent='Question '+(current+1)+'/'+quizQuestions.length;
+document.getElementById('qtext').textContent=q.q;
+var html='';
+for(var i=0;i<<q.a.length;i++){
+var cls='';
+if(answers[current]===i){
+if(i===q.c) cls='correct';
+else cls='wrong';
+}
+html+='<div class="option '+cls+'" onclick="selectOpt('+i+')">'+String.fromCharCode(65+i)+'. '+q.a[i]+'</div>';
+}
+document.getElementById('options').innerHTML=html;
+document.getElementById('progress').style.width=(((current+1)/quizQuestions.length)*100)+'%';
+
+if(current===0){
+document.getElementById('prevBtn').style.display='none';
+}else{
+document.getElementById('prevBtn').style.display='inline-block';
+}
+
+if(current===quizQuestions.length-1){
+document.getElementById('nextBtn').style.display='none';
+document.getElementById('finishBtn').classList.remove('hidden');
+}else{
+document.getElementById('nextBtn').style.display='inline-block';
+document.getElementById('finishBtn').classList.add('hidden');
+}
+
+var exp=document.getElementById('explanation');
+if(answers[current]!==null && mode==='pro'){
+exp.style.display='block';
+document.getElementById('explainText').textContent=q.exp;
+}else{
+exp.style.display='none';
+}
+}
+
+function selectOpt(i){
+if(answers[current]!==null) return;
+answers[current]=i;
+showQ();
+}
+
+function nextQ(){
+if(current < quizQuestions.length-1){
+current++;
+showQ();
+}
+}
+
+function prevQ(){
+if(current>0){
+current--;
+showQ();
+}
+}
+
+function finish(){
+if(timer) clearInterval(timer);
+var correct=0;
+for(var i=0;i<<quizQuestions.length;i++){
+if(answers[i]===quizQuestions[i].c) correct++;
+}
+var pct=Math.round((correct/quizQuestions.length)*100);
+document.getElementById('quiz').classList.add('hidden');
+document.getElementById('results').classList.remove('hidden');
+document.getElementById('scoreCircle').style.setProperty('--deg',(pct/100)*360+'deg');
+document.getElementById('scoreText').textContent=pct+'%';
+document.getElementById('resultDetails').innerHTML=correct+'/'+quizQuestions.length+' correct<br>'+(pct>=80?'✅ Reussi !':'❌ Continuez l entrainement');
+var reviewHtml='';
+for(var i=0;i<<quizQuestions.length;i++){
+var q=quizQuestions[i];
+var ok=answers[i]===q.c;
+reviewHtml+='<div class="option '+(ok?'correct':'wrong')+'" style="margin:0.5rem 0"><strong>Q'+(i+1)+'</strong> '+q.q+'<<br><small>'+(ok?'✅':'❌')+' Votre: '+(answers[i]!==null?q.a[answers[i]]:'NR')+' | Bonne: '+q.a[q.c]+'</small></div>';
+}
+document.getElementById('review').innerHTML=reviewHtml;
+}
+</script>
+</body>
+</html>
